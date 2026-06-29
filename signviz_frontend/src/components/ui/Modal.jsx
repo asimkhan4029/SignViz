@@ -15,33 +15,30 @@ const Modal = ({ isOpen, onClose, title, children }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
           />
 
-          {/* Modal Content */}
+          {/* Panel */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.98, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white/90 backdrop-blur-xl border border-white/50 shadow-2xl ring-1 ring-black/5"
+            exit={{ opacity: 0, scale: 0.98, y: 10 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-surface border border-border shadow-xl"
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 bg-white/50">
-              <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
-                {title}
-              </h2>
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <h2 className="text-xl font-bold tracking-tight text-text-primary">{title}</h2>
               <button
                 onClick={onClose}
-                className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 transition-colors"
+                className="rounded-full p-2 text-text-muted hover:bg-secondary hover:text-text-primary transition-all"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Body */}
-            <div className="p-6">
-              {children}
-            </div>
+            <div className="p-8">{children}</div>
           </motion.div>
         </div>
       )}

@@ -9,15 +9,24 @@ import { useAuth } from '../context/AuthContext';
 const Login = () => {
     const { login } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
+    const [credentials, setCredentials] = useState({ username: '', password: '' });
+    const [error, setError] = useState('');
+
+    const handleChange = (e) => {
+        setCredentials({ ...credentials, [e.target.id]: e.target.value });
+        setError('');
+    };
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        // Simulate network delay
-        setTimeout(async () => {
-            await login();
-            setIsLoading(false);
-        }, 800);
+        setError('');
+        
+        const result = await login(credentials.username, credentials.password);
+        if (!result.success) {
+            setError(result.message);
+        }
+        setIsLoading(false);
     };
 
     return (
@@ -26,12 +35,20 @@ const Login = () => {
             subtitle="Sign in to continue your learning journey"
         >
             <form className="space-y-5" onSubmit={handleLogin}>
+                {error && (
+                    <div className="p-3 bg-red-50 text-red-600 rounded-lg text-xs font-medium">
+                        {error}
+                    </div>
+                )}
+
                 <InputWithIcon 
-                    id="email"
-                    type="email"
-                    label="Email Address"
-                    placeholder="name@example.com"
+                    id="username"
+                    type="text"
+                    label="Username"
+                    placeholder="johndoe123"
                     icon={Mail}
+                    value={credentials.username}
+                    onChange={handleChange}
                 />
                 
                 <div className="space-y-1">
@@ -41,6 +58,8 @@ const Login = () => {
                         label="Password"
                         placeholder="••••••••"
                         icon={Lock}
+                        value={credentials.password}
+                        onChange={handleChange}
                     />
                     <div className="flex justify-between items-center pt-1">
                         <label className="flex items-center text-sm text-gray-500 cursor-pointer">

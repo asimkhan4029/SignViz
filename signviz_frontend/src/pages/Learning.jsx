@@ -1,160 +1,288 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Maximize, User, ChevronLeft, Download, FileText, CheckCircle2 } from 'lucide-react';
+import {
+  Play, Pause, ChevronLeft, BookOpen, Loader2, User,
+} from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { useAuth } from '../context/AuthContext';
+import { useLibrary } from '../context/LibraryContext';
+import { getVideoUrl, hasVideo } from '../lib/videoStore';
 
-const Learning = () => {
-    const { id } = useParams(); 
-    const navigate = useNavigate();
-    const { logout } = useAuth(); // If we need auth info
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [progress, setProgress] = useState(30);
+// ─── Avatar player ───────────────────────────────────────────────────────────
+// wordPairs: [{original, animation}] — original shown in subtitle, animation for .webm
+// words: plain string fallback
+const AvatarPlayer = ({ wordPairs, words, isPlaying, onEnded, onTogglePlay }) => {
+  const videoRef  = useRef(null);
+  const queueRef  = useRef([]);
+  const busyRef   = useRef(false);
+  const loadedRef = useRef('');
+  const [displayOriginal, setDisplayOriginal] = useState(null);
 
-    return (
-        <div className="min-h-screen bg-background flex flex-col">
-             {/* Navigation Bar (Custom for consistency with Library) */}
-             <nav className="bg-white/95 backdrop-blur-xl border-b border-muted/20 px-6 py-4 sticky top-0 z-50 shadow-sm flex-none">
-                <div className="max-w-7xl mx-auto flex items-center justify-between w-full">
-                    <div className="flex items-center gap-4">
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => navigate('/library')}
-                            className="text-gray-500 hover:text-primary hover:bg-primary/5"
-                        >
-                            <ChevronLeft className="w-5 h-5 mr-1" />
-                            Back to Library
-                        </Button>
-                        <div className="h-6 w-px bg-gray-200 mx-2 hidden sm:block"></div>
-                        <h1 className="text-lg font-bold text-gray-900 truncate max-w-xs sm:max-w-md">
-                            Introduction to Biology
-                        </h1>
-                    </div>
-                </div>
-            </nav>
+  const playNext = useCallback(() => {
+    if (queueRef.current.length === 0) {
+      busyRef.current = false;
+      setDisplayOriginal(null);
+      onEnded?.();
+      return;
+    }
+    const { original, animation } = queueRef.current.shift();
+    busyRef.current = true;
+    setDisplayOriginal(original);
+    const vid = videoRef.current;
+    if (!vid) { busyRef.current = false; return; }
+    vid.src = `/static/${animation}.webm`;
+    vid.load();
+    if (isPlaying) vid.play().catch(() => { busyRef.current = false; playNext(); });
+  }, [isPlaying, onEnded]);
 
-            <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full flex flex-col lg:flex-row gap-8">
-                {/* Left Column: Video & Controls */}
-                <div className="flex-1 space-y-6">
-                    {/* Video Player Section */}
-                    <div className="relative group rounded-3xl overflow-hidden shadow-2xl shadow-indigo-900/20 ring-1 ring-black/5 bg-black aspect-video">
-                         <div className="absolute inset-0 flex items-center justify-center">
-                             {/* Placeholder for actual video */}
-                             <div className="animate-pulse opacity-20 bg-gradient-to-tr from-primary to-purple-600 absolute inset-0"></div>
-                             {!isPlaying && (
-                                <button 
-                                    onClick={() => setIsPlaying(true)}
-                                    className="relative z-10 w-20 h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform duration-300 border border-white/20 shadow-lg group-hover:bg-primary"
-                                >
-                                    <Play className="w-8 h-8 ml-1 fill-current" />
-                                </button>
-                             )}
-                         </div>
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    const onEnd = () => { busyRef.current = false; playNext(); };
+    const onErr = () => { busyRef.current = false; playNext(); };
+    vid.addEventListener('ended', onEnd);
+    vid.addEventListener('error', onErr);
+    return () => { vid.removeEventListener('ended', onEnd); vid.removeEventListener('error', onErr); };
+  }, [playNext]);
 
-                        {/* Custom Controls Overlay */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-20 pb-6 px-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                             {/* Progress Bar */}
-                             <div className="h-1.5 bg-white/20 rounded-full cursor-pointer hover:h-2 transition-all mb-4 group/progress">
-                                <div className="h-full bg-primary rounded-full relative" style={{ width: `${progress}%` }}>
-                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-primary rounded-full opacity-0 group-hover/progress:opacity-100 shadow-[0_0_10px_rgba(112,145,230,0.5)] scale-125 transition-all"></div>
-                                </div>
-                            </div>
+  useEffect(() => {
+    // Build queue from wordPairs if available, else plain words
+    let items = [];
+    if (wordPairs && wordPairs.length > 0) {
+      const key = wordPairs.map(p => p.animation).join(',');
+      if (key === loadedRef.current) return;
+      loadedRef.current = key;
+      items = wordPairs.filter(p => p.animation && /[a-zA-Z0-9]/.test(p.animation));
+    } else if (words && words.length > 0) {
+      const key = words.join(',');
+      if (key === loadedRef.current) return;
+      loadedRef.current = key;
+      items = words
+        .filter(w => w && /[a-zA-Z0-9]/.test(w))
+        .map(w => ({ original: w, animation: w }));
+    } else {
+      return;
+    }
+    queueRef.current = items;
+    busyRef.current  = false;
+    setDisplayOriginal(null);
+    if (videoRef.current) { videoRef.current.pause(); videoRef.current.src = ''; }
+    playNext();
+  }, [wordPairs, words, playNext]);
 
-                            <div className="flex items-center justify-between text-white">
-                                <div className="flex items-center gap-6">
-                                    <button onClick={() => setIsPlaying(!isPlaying)} className="hover:text-primary transition-colors">
-                                        {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current" />}
-                                    </button>
-                                    
-                                    <div className="flex items-center gap-4 text-white/70">
-                                        <button className="hover:text-white transition-colors"><SkipBack className="w-5 h-5" /></button>
-                                        <button className="hover:text-white transition-colors"><SkipForward className="w-5 h-5" /></button>
-                                    </div>
-                                    
-                                    <div className="flex items-center gap-3 text-sm font-medium tabular-nums ml-2">
-                                        <span className="text-white">04:20</span>
-                                        <span className="text-white/30">/</span>
-                                        <span className="text-white/50">12:45</span>
-                                    </div>
-                                </div>
-                                
-                                <div className="flex items-center gap-4">
-                                     <div className="flex items-center gap-2 group/vol">
-                                        <Volume2 className="w-5 h-5" />
-                                        <div className="w-0 overflow-hidden group-hover/vol:w-20 transition-all duration-300">
-                                            <div className="w-16 h-1 bg-white/30 rounded-full ml-2">
-                                                <div className="w-2/3 h-full bg-white rounded-full"></div>
-                                            </div>
-                                        </div>
-                                     </div>
-                                    <button className="hover:text-primary transition-colors">
-                                        <Maximize className="w-5 h-5" />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid || !displayOriginal) return;
+    if (isPlaying) vid.play().catch(() => {});
+    else           vid.pause();
+  }, [isPlaying, displayOriginal]);
 
-                    {/* Meta Info */}
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <h2 className="text-2xl font-bold text-gray-900 mb-2">Introduction to Biology</h2>
-                            <p className="text-gray-500">Dr. Sarah Mitchell • Uploaded 2 days ago</p>
-                        </div>
-                        <div className="flex gap-2">
-                             <Button variant="outline" className="gap-2">
-                                <CheckCircle2 className="w-4 h-4 text-green-600" />
-                                Mark Complete
-                             </Button>
-                        </div>
-                    </div>
-                </div>
+  const hasContent = (wordPairs?.length || words?.length);
 
-                {/* Right Column: Avatar & Notes */}
-                <div className="lg:w-96 space-y-6 flex-none">
-                     {/* Avatar Section */}
-                    <div className="premium-card bg-white rounded-3xl p-6 border border-gray-100 shadow-xl shadow-indigo-900/5 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/10 rounded-full -translate-y-16 translate-x-16 blur-2xl"></div>
-                        
-                        <div className="flex items-center justify-between mb-6 relative z-10">
-                            <h3 className="font-bold text-primary flex items-center gap-2">
-                                <User className="w-5 h-5" />
-                                Sign Interpretation
-                            </h3>
-                            <span className="text-xs font-bold px-2 py-1 bg-green-100 text-green-700 rounded-full uppercase tracking-wide">Live</span>
-                        </div>
-                        
-                        <div className="aspect-[3/4] bg-gradient-to-b from-gray-50 to-white rounded-2xl border border-gray-100 flex items-center justify-center relative overflow-hidden group">
-                             <User className="w-32 h-32 text-gray-300 group-hover:text-primary transition-colors duration-500" />
-                             <p className="absolute bottom-4 inset-x-4 text-center text-xs text-gray-400 bg-white/80 backdrop-blur px-2 py-1 rounded-lg">
-                                Syncing with audio...
-                             </p>
-                        </div>
-                    </div>
+  return (
+    <div
+      className="relative w-full h-full bg-black rounded-2xl overflow-hidden shadow-xl group cursor-pointer"
+      onClick={onTogglePlay}
+    >      <video ref={videoRef} className="w-full h-full object-contain" playsInline />
 
-                    {/* Resources */}
-                    <div className="premium-card bg-white rounded-3xl p-6 border border-gray-100 shadow-lg relative overflow-hidden">
-                        <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <FileText className="w-5 h-5 text-secondary" />
-                            Lesson Resources
-                        </h3>
-                        <div className="space-y-3">
-                            <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all group">
-                                <span className="text-sm font-medium text-gray-600 group-hover:text-primary">Transcript (PDF)</span>
-                                <Download className="w-4 h-4 text-gray-400 group-hover:text-primary" />
-                            </button>
-                             <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all group">
-                                <span className="text-sm font-medium text-gray-600 group-hover:text-primary">Lecture Slides</span>
-                                <Download className="w-4 h-4 text-gray-400 group-hover:text-primary" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </main>
+      <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 z-40 bg-black/20 ${isPlaying ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}>
+        {isPlaying ? (
+          <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/30">
+            <Pause className="w-8 h-8 fill-current" />
+          </div>
+        ) : (
+          <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/30 hover:scale-110 transition-transform shadow-xl">
+            <Play className="w-8 h-8 ml-1 fill-current" />
+          </div>
+        )}
+      </div>
+
+      {!displayOriginal && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
+          <User className="w-12 h-12 text-white/20" />
         </div>
+      )}
+
+      {/* Subtitle — shows ORIGINAL spoken word */}
+      {displayOriginal && (
+        <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
+          <p className="text-white text-xs font-bold uppercase tracking-wider">
+            Sign: <span className="text-primary">{displayOriginal}</span>
+          </p>
+        </div>
+      )}
+      <div className="absolute top-3 right-3 bg-primary/20 backdrop-blur-sm px-2 py-1 rounded-md border border-primary/30">
+        <p className="text-primary text-[10px] font-black uppercase">Avatar</p>
+      </div>
+    </div>
+  );
+};
+
+// ─── Main ────────────────────────────────────────────────────────────────────
+const Learning = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { getVideoById } = useLibrary();
+
+  const [item, setItem] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  // Load video from library context
+  useEffect(() => {
+    const load = () => {
+      setIsLoading(true);
+      try {
+        const found = getVideoById(id);
+        setItem(found || null);
+      } catch (err) {
+        console.error('Failed to load video', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    load();
+  }, [id, getVideoById]);
+
+  // Resolve video URL — for local files, get blob URL from videoStore
+  const resolvedVideoUrl = (() => {
+    if (!item) return '';
+    if (item.source_type === 'youtube') return item.videoUrl || '';
+    const fromStore = getVideoUrl(item.videoUrl);
+    if (fromStore) return fromStore;
+    if (item.videoUrl?.startsWith('blob:') || item.videoUrl?.startsWith('data:')) {
+      return item.videoUrl;
+    }
+    return '';
+  })();
+
+  const videoContainerRef = useRef(null);
+  const avatarContainerRef = useRef(null);
+
+  // Sync avatar height to video height
+  useEffect(() => {
+    const syncHeight = () => {
+      if (videoContainerRef.current && avatarContainerRef.current) {
+        const h = videoContainerRef.current.offsetHeight;
+        if (h > 0) avatarContainerRef.current.style.height = h + 'px';
+      }
+    };
+    syncHeight();
+    const ro = new ResizeObserver(syncHeight);
+    if (videoContainerRef.current) ro.observe(videoContainerRef.current);
+    return () => ro.disconnect();
+  }, [item]);
+
+  const togglePlay = () => setIsPlaying(p => !p);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+      </div>
     );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+
+        {/* Back button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/library')}
+          className="text-text-muted hover:text-primary hover:bg-primary/5 pl-0"
+        >
+          <ChevronLeft className="w-5 h-5 mr-1" />
+          Back to Library
+        </Button>
+
+        {/* Meta */}
+        <div>
+          <h2 className="text-2xl font-bold text-foreground mb-1">{item?.title || 'Untitled Video'}</h2>
+          <p className="text-text-muted text-sm">
+            {item?.source_type || 'Translation'} • Saved {item?.saved_at || 'recently'}
+          </p>
+        </div>
+
+        {/* ── Side-by-side players — equal height via ResizeObserver ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* Original video — 2/3 */}
+          <div className="lg:col-span-2">
+            <div ref={videoContainerRef} className="w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl">
+              {item?.source_type === 'youtube' && item?.youtube_id ? (
+                <iframe
+                  className="w-full h-full"
+                  src={`https://www.youtube.com/embed/${item.youtube_id}?controls=1`}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title={item?.title}
+                />
+              ) : (
+                <video
+                  className="w-full h-full object-contain"
+                  controls
+                  src={resolvedVideoUrl}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Avatar — 1/3, height synced to video via ref */}
+          <div className="lg:col-span-1">
+            <div ref={avatarContainerRef} className="w-full bg-black rounded-2xl overflow-hidden">
+              <AvatarPlayer                wordPairs={item?.wordPairs || []}
+                words={item?.animationData || []}
+                isPlaying={isPlaying}
+                onEnded={() => setIsPlaying(false)}
+                onTogglePlay={togglePlay}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Signs list */}
+        {item?.animationData?.length > 0 && (
+          <Card className="p-5 border border-white/40 shadow-lg rounded-2xl">
+            <h3 className="font-bold text-foreground mb-3 flex items-center gap-2 text-sm">
+              <BookOpen className="w-4 h-4 text-primary" />
+              All Signs ({item.animationData.length})
+            </h3>
+            <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
+              {item.animationData.map((w, i) => (
+                <span key={i} className="px-2 py-0.5 bg-surface/50 border border-white/30 text-foreground text-xs font-medium rounded-lg">
+                  {w}
+                </span>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Play/Pause button */}
+        {item?.animationData?.length > 0 && (
+          <div className="flex justify-center">
+            <Button
+              onClick={togglePlay}
+              className={`px-12 py-4 rounded-xl transition-all ${
+                isPlaying ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-primary hover:bg-primary-light text-white'
+              }`}
+            >
+              {isPlaying
+                ? <><Pause className="w-5 h-5 mr-2 fill-current" /> Pause Avatar</>
+                : <><Play  className="w-5 h-5 mr-2 fill-current" /> Play Avatar</>}
+            </Button>
+          </div>
+        )}
+
+      </main>
+    </div>
+  );
 };
 
 export default Learning;

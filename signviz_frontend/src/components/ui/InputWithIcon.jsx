@@ -18,13 +18,13 @@ const InputWithIcon = ({
   return (
     <div className={`space-y-1.5 ${className}`}>
       {label && (
-        <label htmlFor={id} className="text-sm font-medium text-primary block">
+        <label htmlFor={id} className="text-sm font-medium text-text-secondary block px-1">
           {label}
         </label>
       )}
       <div className="relative group">
         {Icon && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#17635D] transition-colors duration-200">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-primary transition-colors duration-200">
             <Icon className="h-5 w-5" />
           </div>
         )}
@@ -34,15 +34,10 @@ const InputWithIcon = ({
           type={inputType}
           placeholder={placeholder}
           className={`
-            w-full bg-white text-slate-900 placeholder:text-slate-400
-            border border-slate-200 rounded-xl
-            ${Icon ? 'pl-10' : 'pl-4'} 
-            ${isPassword ? 'pr-10' : 'pr-4'} 
-            py-3
-            focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500
-            transition-all duration-300
-            shadow-sm
-            ${error ? 'border-red-500 focus:ring-red-200 focus:border-red-500' : ''}
+            input-brand
+            ${Icon ? 'pl-11' : 'pl-4'} 
+            ${isPassword ? 'pr-11' : 'pr-4'} 
+            ${error ? 'border-error focus:ring-error/10 focus:border-error' : ''}
           `}
           {...props}
         />
@@ -51,7 +46,7 @@ const InputWithIcon = ({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary focus:outline-none transition-colors"
           >
             {showPassword ? (
               <EyeOff className="h-5 w-5" />
@@ -61,7 +56,7 @@ const InputWithIcon = ({
           </button>
         )}
       </div>
-      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+      {error && <p className="text-xs text-error font-medium mt-1.5 px-1">{error}</p>}
     </div>
   );
 };

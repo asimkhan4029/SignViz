@@ -4,24 +4,27 @@ import { cn } from '../../lib/utils';
 const Card = forwardRef(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn('premium-card rounded-xl border border-white/50 bg-white/50 backdrop-blur-sm text-card-foreground shadow-lg', className)}
+    className={cn(
+      'premium-card p-6 overflow-hidden',
+      className
+    )}
     {...props}
   />
 ));
 Card.displayName = 'Card';
 
 const CardHeader = forwardRef(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn('flex flex-col space-y-1.5 p-6', className)} {...props} />
+  <div ref={ref} className={cn('flex flex-col space-y-1.5 p-8', className)} {...props} />
 ));
 CardHeader.displayName = 'CardHeader';
 
 const CardTitle = forwardRef(({ className, ...props }, ref) => (
-  <h3 ref={ref} className={cn('text-2xl font-semibold leading-none tracking-tight', className)} {...props} />
+  <h3 ref={ref} className={cn('text-xl font-bold leading-none tracking-tight text-foreground', className)} {...props} />
 ));
 CardTitle.displayName = 'CardTitle';
 
 const CardContent = forwardRef(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
+  <div ref={ref} className={cn('p-8 pt-0', className)} {...props} />
 ));
 CardContent.displayName = 'CardContent';
 

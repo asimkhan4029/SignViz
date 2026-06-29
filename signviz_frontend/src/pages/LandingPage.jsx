@@ -13,31 +13,31 @@ const LandingPage = () => {
                 <Home />
             </section>
             
-            <section id="upload" className="w-full bg-background/50 py-16 sm:py-24">
+            <section id="upload" className="w-full bg-slate-50 py-24 border-y border-slate-100">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
                     <UploadPage />
                 </div>
             </section>
 
-            <section id="features" className="w-full py-16 sm:py-24 scroll-mt-20">
+            <section id="features" className="w-full py-24 scroll-mt-20">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
                     <Features />
                 </div>
             </section>
 
-            <section id="process" className="w-full bg-background/50 py-16 sm:py-24 scroll-mt-20">
+            <section id="process" className="w-full bg-slate-50 py-24 border-y border-slate-100 scroll-mt-20">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
                     <HowItWorks />
                 </div>
             </section>
 
-            <section id="about" className="w-full py-16 sm:py-24 scroll-mt-20">
+            <section id="about" className="w-full py-24 scroll-mt-20">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
                     <About />
                 </div>
             </section>
 
-            <section id="contact" className="w-full bg-background/50 py-16 sm:py-24 scroll-mt-20">
+            <section id="contact" className="w-full bg-slate-50 py-24 border-y border-slate-100 scroll-mt-20">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
                     <Contact />
                 </div>

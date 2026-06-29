@@ -4,22 +4,22 @@ import {  Type, User, ScanText, Accessibility, GraduationCap, Cpu } from 'lucide
 
 const Features = () => {
     return (
-        <div className="min-h-screen bg-background text-gray-600 selection:bg-primary/20 selection:text-primary">
+        <div className="min-h-screen text-gray-600 selection:bg-primary/20 selection:text-primary">
              {/* Hero Section */}
-             <div className="relative py-24 px-4 text-center overflow-hidden bg-white border-b border-gray-100">
-                <div className="absolute inset-0 bg-grid-slate-50 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
+             <div className="relative py-32 px-4 text-center overflow-hidden bg-white border-b border-slate-100">
+                <div className="absolute inset-0 -z-10 bg-slate-50/50" />
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     className="max-w-4xl mx-auto space-y-4"
                 >
-                     <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-primary">
-                         Key Features of <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-teal-500 to-secondary">SignViz</span>
-                     </h1>
-                     <p className="text-lg md:text-xl text-gray-600 font-light max-w-2xl mx-auto">
-                        Core functionalities designed to support accessible and inclusive communication.
-                     </p>
+                      <h1 className="text-6xl md:text-8xl font-black tracking-tight mb-6">
+                         Our <span className="gradient-text">Core Features</span>
+                      </h1>
+                      <p className="text-xl md:text-2xl text-text-secondary font-medium max-w-3xl mx-auto leading-relaxed">
+                         Cutting-edge technology designed to empower the deaf community through visual-first communication.
+                      </p>
                 </motion.div>
              </div>
 
@@ -59,26 +59,25 @@ const Features = () => {
                 </div>
             </div>
             
-            {/* Technical Emphasis (Dark Section like About Page) */}
-            <section className="py-24 bg-primary relative overflow-hidden">
+            {/* Technical Emphasis */}
+            <section className="py-32 bg-slate-900 relative overflow-hidden">
                 <div className="max-w-4xl mx-auto px-4 text-center space-y-8 relative z-10">
                     <motion.div 
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
-                        transition={{ duration: 1 }}
+                        transition={{ duration: 0.8 }}
                     >
-                        <h2 className="text-3xl font-semibold text-white mb-4">Powered by Innovation</h2>
-                        <p className="text-white/80 leading-relaxed max-w-2xl mx-auto text-lg">
+                        <h2 className="text-4xl md:text-5xl font-black text-white mb-6">Powered by Innovation</h2>
+                        <p className="text-slate-300 leading-relaxed max-w-2xl mx-auto text-xl font-medium">
                             SignViz is built upon a foundation of research into computational linguistics and computer graphics. 
-                            Our system interprets text semantics and maps them to a comprehensive database of skeletal animation data, 
-                            rendering signs in real-time within the browser.
+                            Our system interprets text semantics and maps them to a comprehensive database of skeletal animation data.
                         </p>
                     </motion.div>
                 </div>
                 {/* Background decorations */}
-                <div className="absolute top-0 right-0 translate-x-1/3 -translate-y-1/3 w-96 h-96 bg-secondary/10 blur-[100px] rounded-full pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 -translate-x-1/3 translate-y-1/3 w-96 h-96 bg-primary/10 blur-[100px] rounded-full pointer-events-none"></div>
+                <div className="absolute top-0 right-0 translate-x-1/3 -translate-y-1/3 w-96 h-96 bg-primary/20 blur-[100px] rounded-full pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 -translate-x-1/3 translate-y-1/3 w-96 h-96 bg-accent/20 blur-[100px] rounded-full pointer-events-none"></div>
             </section>
 
         </div>
@@ -111,23 +110,23 @@ const FeatureCard = ({ icon, title, description }) => {
                     background: useMotionTemplate`
                         radial-gradient(
                         650px circle at ${mouseX}px ${mouseY}px,
-                        rgba(14, 165, 233, 0.05),
+                        rgba(79, 70, 229, 0.08),
                         transparent 80%
                         )
                     `,
                 }}
             />
             
-            <div className="relative flex flex-col gap-5">
-                <div className="h-14 w-14 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500">
+            <div className="relative flex flex-col gap-6">
+                <div className="h-14 w-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-primary group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-sm">
                     {icon}
                 </div>
                 
-                <h3 className="text-2xl font-bold text-primary tracking-tight group-hover:text-primary transition-colors duration-300">
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight group-hover:text-primary transition-colors duration-300">
                     {title}
                 </h3>
                 
-                <p className="text-gray-600 leading-relaxed font-light text-lg">
+                <p className="text-text-secondary text-lg leading-relaxed font-medium">
                     {description}
                 </p>
             </div>

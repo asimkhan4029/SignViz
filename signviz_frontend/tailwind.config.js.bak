@@ -10,6 +10,7 @@ export default {
         primary: {
           DEFAULT: '#0D9488', // Teal
           foreground: '#FFFFFF',
+          primaryLight: '#F8F9FB',
         },
         secondary: {
           DEFAULT: '#4F46E5', // Indigo
